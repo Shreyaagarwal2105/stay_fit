@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shreya's Plan">
+<title>Shreya's Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#FAF7F2;--warm:#FFF9F4;--dark:#1C1812;--brown:#3D2B1F;--terra:#C4623A;--terra-l:#E8845E;--sage:#6B9E7E;--sage-l:#A2C4B0;--gold:#D4A040;--muted:#9B8A7A;--border:#E8DDD4;--safe-top:env(safe-area-inset-top,0px);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--cream);font-family:'Nunito',sans-serif;color:var(--dark);display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--dark);padding:calc(var(--safe-top) + 18px) 20px 16px;text-align:center;position:relative;overflow:hidden;flex-shrink:0;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(196,98,58,.3) 0%,transparent 55%),radial-gradient(ellipse at 85% 100%,rgba(107,158,126,.2) 0%,transparent 50%);}
+.header-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--terra-l);margin-bottom:3px;position:relative;}
+.header h1{font-family:'Playfair Display',serif;font-size:21px;color:var(--cream);line-height:1.15;position:relative;}
+.header h1 em{color:var(--terra-l);font-style:italic;}
+.marathon-bar{margin-top:8px;position:relative;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;display:inline-flex;align-items:center;gap:8px;}
+.marathon-days{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);}
+.marathon-label{font-size:10px;color:rgba(250,247,242,.6);}
+
+/* SYNC STATUS */
+.sync-dot{position:absolute;top:10px;right:12px;width:8px;height:8px;border-radius:50%;background:#666;transition:background .3s;}
+.sync-dot.synced{background:var(--sage);}
+.sync-dot.syncing{background:var(--gold);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--terra);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* NAV */
+.nav-tabs{display:flex;background:var(--dark);border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;}
+.nav-tab{flex:1;padding:9px 4px 7px;text-align:center;font-size:10px;font-weight:700;color:rgba(250,247,242,.4);cursor:pointer;transition:all .2s;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.nav-tab .ti{font-size:17px;}
+.nav-tab.active{color:var(--terra-l);}
+
+/* SCROLL */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:24px;}
+
+/* PANELS */
+.panel{display:none;}
+.panel.visible{display:block;animation:fadeUp .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* DASHBOARD */
+.dash-greeting{margin:14px 16px 0;}
+.dash-name{font-family:'Playfair Display',serif;font-size:24px;line-height:1.1;}
+.dash-name em{color:var(--terra);font-style:italic;}
+.dash-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+.streak-row{display:flex;gap:8px;margin:12px 16px 0;}
+.streak-card{flex:1;background:var(--dark);border-radius:13px;padding:12px 10px;text-align:center;position:relative;overflow:hidden;}
+.streak-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(196,98,58,.2) 0%,transparent 70%);}
+.streak-val{font-family:'Playfair Display',serif;font-size:28px;color:var(--cream);position:relative;line-height:1;}
+.streak-val span{font-size:14px;}
+.streak-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(250,247,242,.5);margin-top:3px;position:relative;}
+
+.week-summary{margin:12px 16px 0;background:var(--warm);border:1.5px solid var(--border);border-radius:13px;padding:13px 15px;}
+.ws-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:11px;}
+.ws-bars{display:flex;gap:5px;align-items:flex-end;height:55px;}
+.ws-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;}
+.ws-bar-track{flex:1;width:100%;background:var(--border);border-radius:5px;overflow:hidden;display:flex;align-items:flex-end;}
+.ws-bar-fill{width:100%;border-radius:5px;transition:height .6s cubic-bezier(.34,1.56,.64,1);}
+.ws-bar-fill.workout{background:linear-gradient(180deg,var(--terra-l),var(--terra));}
+.ws-bar-fill.empty{background:var(--border);}
+.ws-day-label{font-size:9px;font-weight:700;color:var(--muted);}
+.ws-day-label.today{color:var(--terra);}
+
+.today-cards{margin:10px 16px 0;display:flex;flex-direction:column;gap:7px;}
+.today-card{background:var(--warm);border:1.5px solid var(--border);border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:11px;}
+.tc-icon{font-size:20px;flex-shrink:0;}
+.tc-info{flex:1;}
+.tc-title{font-size:13px;font-weight:600;}
+.tc-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.tc-val{font-family:'Playfair Display',serif;font-size:18px;color:var(--terra);}
+
+/* WEIGHT */
+.weight-section{margin:12px 16px 0;}
+.ws-head-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.weight-input-row{display:flex;gap:8px;margin-bottom:9px;}
+.weight-input{flex:1;background:var(--warm);border:1.5px solid var(--border);border-radius:10px;padding:9px 11px;font-family:'Playfair Display',serif;font-size:20px;color:var(--dark);text-align:center;outline:none;}
+.weight-input:focus{border-color:var(--terra);}
+.weight-btn{background:var(--dark);color:var(--cream);border:none;border-radius:10px;padding:9px 16px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.weight-history{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;}
+.weight-entry{background:var(--warm);border:1.5px solid var(--border);border-radius:9px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;}
+.we-date{font-size:11px;color:var(--muted);}
+.we-val{font-family:'Playfair Display',serif;font-size:17px;}
+.we-delta{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.we-delta.down{background:#E8F5EF;color:var(--sage);}
+.we-delta.up{background:#FFF0EB;color:var(--terra);}
+.we-delta.same{background:var(--border);color:var(--muted);}
+
+/* DAY NAV */
+.day-nav{display:flex;gap:5px;padding:12px 16px 0;overflow-x:auto;scrollbar-width:none;}
+.day-nav::-webkit-scrollbar{display:none;}
+.day-pill{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:11px;border:1.5px solid var(--border);background:var(--warm);cursor:pointer;transition:all .2s;min-width:48px;gap:2px;position:relative;}
+.day-pill.active{background:var(--dark);border-color:var(--dark);}
+.day-pill.rest{border-style:dashed;}
+.day-num{font-size:14px;font-weight:700;color:var(--dark);line-height:1;}
+.day-pill.active .day-num{color:var(--cream);}
+.day-pill.rest .day-num{color:var(--muted);}
+.day-tag{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);}
+.day-pill.active .day-tag{color:var(--terra-l);}
+.day-dot{width:5px;height:5px;border-radius:50%;background:var(--border);}
+.day-pill.strength .day-dot{background:var(--terra);}
+.day-pill.run .day-dot{background:var(--sage);}
+.day-pill.active .day-dot{opacity:.5;}
+.done-badge{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--sage);display:none;}
+.done-badge.show{display:block;}
+
+/* DAY CARDS */
+.day-card,.meal-day-card{margin:12px 16px 0;display:none;animation:fadeUp .25s ease;}
+.day-card.visible,.meal-day-card.visible{display:block;}
+.day-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+.day-title{font-family:'Playfair Display',serif;font-size:21px;line-height:1.1;}
+.day-title span{color:var(--terra);}
+.day-subtitle{font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;}
+.day-icon{font-size:26px;}
+
+/* SECTIONS */
+.section{margin-bottom:11px;}
+.section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;padding-left:2px;}
+
+/* EXERCISES */
+.exercise-list{display:flex;flex-direction:column;gap:6px;}
+.exercise-row{background:var(--warm);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:opacity .2s;}
+.exercise-row.loading{opacity:.6;}
+.ex-main{padding:11px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.exercise-row.done .ex-main{background:#F0FAF4;}
+.ex-check{width:21px;height:21px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:10px;color:transparent;}
+.exercise-row.done .ex-check{background:var(--sage);border-color:var(--sage);color:white;}
+.ex-info{flex:1;}
+.ex-name{font-size:13px;font-weight:600;line-height:1.2;}
+.exercise-row.done .ex-name{text-decoration:line-through;color:var(--muted);}
+.ex-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.ex-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--border);color:var(--brown);white-space:nowrap;}
+.exercise-row.done .ex-badge{background:#C8E8D4;color:var(--sage);}
+.ex-expand-btn{background:none;border:none;font-size:14px;cursor:pointer;padding:0 3px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.ex-expand-btn.open{transform:rotate(180deg);color:var(--terra);}
+.ex-detail-panel{display:none;border-top:1px solid var(--border);padding:12px 12px 14px;background:#FDFAF7;}
+.ex-detail-panel.open{display:block;animation:fadeUp .2s ease;}
+.ex-illustration{width:100%;max-width:250px;display:block;margin:0 auto 10px;}
+.ex-how{font-size:12px;line-height:1.7;}
+.ex-how strong{color:var(--terra);font-weight:700;}
+.ex-tip{margin-top:8px;background:#FFF3EE;border:1px solid #EAC5B2;border-radius:8px;padding:7px 9px;font-size:11px;color:var(--brown);line-height:1.5;}
+
+/* RUN */
+.run-block{background:var(--warm);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.run-block.highlight{background:linear-gradient(135deg,#F0F7F3,#E8F5EF);border-color:var(--sage-l);}
+.run-block-title{font-weight:700;font-size:12px;margin-bottom:3px;display:flex;align-items:center;gap:6px;}
+.run-block-title .dot{width:6px;height:6px;border-radius:50%;background:var(--sage);flex-shrink:0;}
+.run-desc{font-size:12px;color:var(--muted);line-height:1.6;}
+.interval-row{display:flex;gap:7px;margin-top:9px;}
+.interval-chip{flex:1;text-align:center;border-radius:9px;padding:9px 5px;}
+.interval-chip.jog{background:#E8F2EE;border:1.5px solid var(--sage-l);}
+.interval-chip.walk{background:#FFF3EE;border:1.5px solid #EAC5B2;}
+.chip-time{font-family:'Playfair Display',serif;font-size:19px;}
+.chip-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+/* REST */
+.rest-card{background:var(--warm);border:1.5px dashed var(--border);border-radius:14px;padding:24px 18px;text-align:center;}
+.rest-card .rest-icon{font-size:34px;margin-bottom:7px;}
+.rest-card h3{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:5px;}
+.rest-card p{font-size:12px;color:var(--muted);line-height:1.7;}
+
+/* PROGRESS BAR */
+.completion-bar{margin-top:11px;background:var(--warm);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;}
+.completion-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.completion-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.completion-pct{font-family:'Playfair Display',serif;font-size:17px;}
+.completion-track{height:6px;background:var(--border);border-radius:10px;overflow:hidden;}
+.completion-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--terra),var(--terra-l));transition:width .5s ease;}
+
+/* MEALS */
+.macro-strip{display:flex;gap:6px;margin-bottom:11px;}
+.macro-chip{flex:1;background:var(--warm);border:1.5px solid var(--border);border-radius:10px;padding:8px 4px;text-align:center;}
+.mc-val{font-family:'Playfair Display',serif;font-size:14px;line-height:1;}
+.mc-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+.macro-chip.kcal .mc-val{color:var(--terra);}
+.macro-chip.prot .mc-val{color:var(--sage);}
+.meal-card{background:var(--warm);border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:opacity .2s;}
+.meal-card.loading{opacity:.6;}
+.meal-header{padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;}
+.meal-check{width:21px;height:21px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:transparent;transition:all .2s;}
+.meal-card.done .meal-check{background:var(--sage);border-color:var(--sage);color:white;}
+.meal-icon{font-size:19px;flex-shrink:0;}
+.meal-info{flex:1;}
+.meal-name{font-size:13px;font-weight:700;}
+.meal-card.done .meal-name{text-decoration:line-through;color:var(--muted);}
+.meal-cal{font-size:11px;color:var(--muted);margin-top:1px;}
+.meal-arrow{font-size:12px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.meal-header.open .meal-arrow{transform:rotate(180deg);color:var(--terra);}
+.meal-body{display:none;border-top:1px solid var(--border);padding:10px 13px 12px;background:#FDFAF7;}
+.meal-body.open{display:block;animation:fadeUp .2s ease;}
+.meal-item{display:flex;align-items:flex-start;gap:7px;margin-bottom:6px;font-size:12px;line-height:1.5;}
+.meal-item::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--terra);flex-shrink:0;margin-top:5px;}
+.meal-note{margin-top:7px;background:#FFF8F5;border:1px solid #EDD5C5;border-radius:7px;padding:7px 9px;font-size:11px;color:var(--brown);line-height:1.5;}
+.meal-done-btn{margin-top:9px;width:100%;background:var(--dark);color:var(--cream);border:none;border-radius:8px;padding:9px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.meal-card.done .meal-done-btn{background:var(--sage);}
+
+/* WATER */
+.water-strip{margin-top:11px;background:var(--warm);border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;}
+.water-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
+.water-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.water-count{font-family:'Playfair Display',serif;font-size:17px;color:#4A90D9;}
+.water-glasses{display:flex;gap:5px;flex-wrap:wrap;}
+.glass{font-size:21px;cursor:pointer;transition:transform .15s;filter:grayscale(1) opacity(.3);}
+.glass.filled{filter:none;transform:scale(1.1);}
+
+/* RULES */
+.rules-strip{margin:12px 16px 0;background:var(--dark);border-radius:13px;padding:13px 14px;}
+.rules-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--terra-l);margin-bottom:9px;}
+.rules-grid{display:flex;flex-direction:column;gap:6px;}
+.rule-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:rgba(250,247,242,.75);line-height:1.5;}
+.rule-item span{font-size:13px;flex-shrink:0;margin-top:1px;}
+.progress-strip{margin:10px 16px 0;}
+.progress-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+.week-rows{display:flex;flex-direction:column;gap:7px;}
+.week-row{background:var(--warm);border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;display:flex;align-items:center;gap:11px;}
+.week-num{font-family:'Playfair Display',serif;font-size:16px;min-width:42px;}
+.week-num small{font-family:'Nunito',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;}
+.week-goals{flex:1;display:flex;flex-direction:column;gap:3px;}
+.week-goal{font-size:12px;display:flex;align-items:center;gap:5px;}
+.week-goal::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--terra);flex-shrink:0;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:var(--cream);padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="sync-dot" id="syncDot" title="Sync status"></div>
+  <div class="header-label">Shreya's Plan</div>
+  <h1>Strength + Run <em>&amp; Nutrition</em></h1>
+  <div class="marathon-bar">
+    <div class="marathon-days" id="marathonDays">—</div>
+    <div class="marathon-label">days to London Marathon 🏅</div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="switchTab('dash')"><div class="ti">📊</div>Dashboard</div>
+  <div class="nav-tab" onclick="switchTab('workout')"><div class="ti">🏋️</div>Workout</div>
+  <div class="nav-tab" onclick="switchTab('meals')"><div class="ti">🥗</div>Meals</div>
+  <div class="nav-tab" onclick="switchTab('rules')"><div class="ti">📋</div>Rules</div>
+</div>
+
+<div class="scroll-area">
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div class="panel visible" id="panel-dash">
+  <div class="dash-greeting">
+    <div class="dash-name">Good <em id="timeGreet">morning</em>, Shreya</div>
+    <div class="dash-sub" id="dashSub">Loading your stats...</div>
+  </div>
+  <div class="streak-row">
+    <div class="streak-card"><div class="streak-val" id="statStreak">—<span>🔥</span></div><div class="streak-label">Day Streak</div></div>
+    <div class="streak-card"><div class="streak-val" id="statWeek">—<span>%</span></div><div class="streak-label">This Week</div></div>
+    <div class="streak-card"><div class="streak-val" id="statTotal">—<span>✓</span></div><div class="streak-label">Total Days</div></div>
+  </div>
+  <div class="week-summary">
+    <div class="ws-title">This Week — Workout Completion</div>
+    <div class="ws-bars" id="wsBars"></div>
+  </div>
+  <div class="today-cards">
+    <div class="today-card"><div class="tc-icon">💧</div><div class="tc-info"><div class="tc-title">Water Today</div><div class="tc-sub">Goal: 8 glasses</div></div><div class="tc-val" id="dashWater">—</div></div>
+    <div class="today-card"><div class="tc-icon">🥗</div><div class="tc-info"><div class="tc-title">Meals Today</div><div class="tc-sub">Logged today</div></div><div class="tc-val" id="dashMeals">—</div></div>
+    <div class="today-card"><div class="tc-icon">⚖️</div><div class="tc-info"><div class="tc-title">Latest Weight</div><div class="tc-sub" id="dashWeightDelta">—</div></div><div class="tc-val" id="dashWeight">—</div></div>
+  </div>
+  <div class="weight-section">
+    <div class="ws-head-title">Weight Log</div>
+    <div class="weight-input-row">
+      <input class="weight-input" id="weightInput" type="number" step="0.1" placeholder="53.0" inputmode="decimal">
+      <button class="weight-btn" onclick="logWeight()">Log kg</button>
+    </div>
+    <div class="weight-history" id="weightHistory"><div style="font-size:12px;color:var(--muted);padding:6px 0;">Loading...</div></div>
+  </div>
+</div>
+
+<!-- ══════════ WORKOUT ══════════ -->
+<div class="panel" id="panel-workout">
+  <div class="day-nav" id="dayNav">
+    <div class="day-pill strength active" data-day="1" onclick="showDay(1)"><div class="day-num">1</div><div class="day-tag">STR</div><div class="day-dot"></div><div class="done-badge" id="wb1"></div></div>
+    <div class="day-pill run" data-day="2" onclick="showDay(2)"><div class="day-num">2</div><div class="day-tag">RUN</div><div class="day-dot"></div><div class="done-badge" id="wb2"></div></div>
+    <div class="day-pill rest" data-day="3" onclick="showDay(3)"><div class="day-num">3</div><div class="day-tag">REST</div><div class="day-dot"></div><div class="done-badge" id="wb3"></div></div>
+    <div class="day-pill strength" data-day="4" onclick="showDay(4)"><div class="day-num">4</div><div class="day-tag">STR</div><div class="day-dot"></div><div class="done-badge" id="wb4"></div></div>
+    <div class="day-pill run" data-day="5" onclick="showDay(5)"><div class="day-num">5</div><div class="day-tag">RUN</div><div class="day-dot"></div><div class="done-badge" id="wb5"></div></div>
+    <div class="day-pill rest" data-day="6" onclick="showDay(6)"><div class="day-num">6</div><div class="day-tag">REST</div><div class="day-dot"></div><div class="done-badge" id="wb6"></div></div>
+    <div class="day-pill rest" data-day="7" onclick="showDay(7)"><div class="day-num">7</div><div class="day-tag">REST</div><div class="day-dot"></div><div class="done-badge" id="wb7"></div></div>
+  </div>
+
+  <!-- DAY 1 -->
+  <div class="day-card visible" id="day-1">
+    <div class="day-header"><div><div class="day-title">Day <span>1</span> — Full Body Strength</div><div class="day-subtitle">~45 min · Gym · tap ▾ on any exercise to see how</div></div><div class="day-icon">🏋️‍♀️</div></div>
+    <div class="section"><div class="section-label">Warm-Up</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_1_wu1"><div class="ex-main" onclick="toggleEx('1','wu1')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Treadmill Walk</div><div class="ex-sub">Easy pace, just get moving</div></div><div class="ex-badge">5–7 min</div></div></div>
+      <div class="exercise-row" id="ex_1_wu2"><div class="ex-main" onclick="toggleEx('1','wu2')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Light Stretching</div><div class="ex-sub">Hips, hamstrings, shoulders</div></div><div class="ex-badge">2–3 min</div></div></div>
+    </div></div>
+    <div class="section"><div class="section-label">Lower Body</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_1_lp">
+        <div class="ex-main" onclick="toggleEx('1','lp')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Leg Press</div><div class="ex-sub">Machine · push through heels</div></div><div class="ex-badge">3 × 10</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-lp')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-lp"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="10" y="138" width="280" height="10" rx="4" fill="#E8DDD4"/><rect x="25" y="83" width="63" height="17" rx="5" fill="#D4C8BC"/><rect x="25" y="100" width="9" height="38" rx="4" fill="#C4B4A8"/><rect x="79" y="100" width="9" height="38" rx="4" fill="#C4B4A8"/><rect x="16" y="46" width="17" height="48" rx="5" fill="#C4B4A8"/><rect x="168" y="48" width="86" height="14" rx="5" fill="#D4C8BC"/><rect x="242" y="62" width="12" height="76" rx="4" fill="#C4B4A8"/><rect x="47" y="53" width="22" height="32" rx="6" fill="#C4623A"/><circle cx="58" cy="46" r="10" fill="#F5C5A3"/><line x1="58" y1="85" x2="106" y2="103" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><line x1="106" y1="103" x2="162" y2="84" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><ellipse cx="169" cy="81" rx="12" ry="7" fill="#C4623A"/><text x="150" y="152" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Leg Press Machine</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> A reclined machine where you push a weighted footplate away with both feet.<br><br><strong>How:</strong> Sit back flat on pad, feet shoulder-width on platform. Bend knees to bring plate toward you, push back out — don't lock knees at top.<br><br><strong>Works:</strong> Quads, glutes, hamstrings.</div><div class="ex-tip">💡 Lower back must stay pressed into the seat throughout. If it arches — weight is too heavy.</div></div>
+      </div>
+      <div class="exercise-row" id="ex_1_slc">
+        <div class="ex-main" onclick="toggleEx('1','slc')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Seated Leg Curl</div><div class="ex-sub">Machine · curl heels toward seat</div></div><div class="ex-badge">3 × 12</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-slc')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-slc"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="10" y="140" width="280" height="10" rx="4" fill="#E8DDD4"/><rect x="22" y="78" width="68" height="17" rx="5" fill="#D4C8BC"/><rect x="22" y="95" width="9" height="45" rx="4" fill="#C4B4A8"/><rect x="81" y="95" width="9" height="45" rx="4" fill="#C4B4A8"/><rect x="14" y="40" width="17" height="47" rx="5" fill="#C4B4A8"/><rect x="41" y="48" width="22" height="33" rx="6" fill="#C4623A"/><circle cx="52" cy="41" r="10" fill="#F5C5A3"/><line x1="52" y1="81" x2="116" y2="97" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><line x1="116" y1="97" x2="180" y2="110" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><rect x="163" y="104" width="29" height="11" rx="5" fill="#C4623A" opacity=".7"/><path d="M190 107 Q212 125 221 102" stroke="#6B9E7E" stroke-width="2.5" fill="none"/><text x="223" y="100" font-size="10" fill="#6B9E7E">↑ curl</text><text x="150" y="153" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Seated Leg Curl Machine</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> Sit upright and curl your lower legs downward against a padded bar on your shins.<br><br><strong>How:</strong> Pad just above ankles. Curl legs down as far as comfortable — like tucking heels under seat. Squeeze, then slowly return.<br><br><strong>Works:</strong> Hamstrings (back of thighs).</div><div class="ex-tip">💡 Go slow on the return — that's where most muscle benefit happens.</div></div>
+      </div>
+      <div class="exercise-row" id="ex_1_gb">
+        <div class="ex-main" onclick="toggleEx('1','gb')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Glute Bridge</div><div class="ex-sub">Floor · squeeze bum at the top</div></div><div class="ex-badge">3 × 12</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-gb')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-gb"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="10" y="138" width="280" height="10" rx="4" fill="#E8DDD4"/><ellipse cx="87" cy="130" rx="26" ry="9" fill="#F5C5A3"/><line x1="85" y1="123" x2="65" y2="138" stroke="#F5C5A3" stroke-width="11" stroke-linecap="round"/><line x1="111" y1="121" x2="97" y2="138" stroke="#F5C5A3" stroke-width="11" stroke-linecap="round"/><rect x="81" y="93" width="91" height="21" rx="8" fill="#C4623A" transform="rotate(-12 126 103)"/><circle cx="189" cy="107" r="12" fill="#F5C5A3"/><path d="M126 87 L126 65" stroke="#6B9E7E" stroke-width="2.5" marker-end="url(#ga)"/><defs><marker id="ga" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#6B9E7E"/></marker></defs><text x="143" y="62" font-size="10" fill="#6B9E7E">push hips up!</text><text x="150" y="152" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Glute Bridge — floor exercise</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> Lie on your back and lift your hips to the ceiling.<br><br><strong>How:</strong> On back, knees bent, feet flat hip-width apart. Push through heels, squeeze glutes, lift hips until straight line from shoulders to knees. Hold 1 sec, lower slowly.<br><br><strong>Works:</strong> Glutes, hamstrings, core.</div><div class="ex-tip">💡 Actively squeeze your bum at the top — not your back. Feet too far out? Bring them closer in.</div></div>
+      </div>
+    </div></div>
+    <div class="section"><div class="section-label">Upper Body</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_1_lpd">
+        <div class="ex-main" onclick="toggleEx('1','lpd')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Lat Pulldown</div><div class="ex-sub">Machine · pull bar down to chest</div></div><div class="ex-badge">3 × 10</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-lpd')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-lpd"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="80" y="8" width="140" height="7" rx="4" fill="#C4B4A8"/><line x1="150" y1="15" x2="150" y2="33" stroke="#C4B4A8" stroke-width="3"/><rect x="88" y="31" width="124" height="8" rx="4" fill="#3D2B1F"/><rect x="120" y="74" width="60" height="11" rx="3" fill="#D4C8BC"/><rect x="125" y="54" width="23" height="29" rx="6" fill="#C4623A"/><circle cx="136" cy="46" r="11" fill="#F5C5A3"/><line x1="125" y1="62" x2="98" y2="37" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><line x1="98" y1="37" x2="92" y2="35" stroke="#F5C5A3" stroke-width="8" stroke-linecap="round"/><line x1="148" y1="62" x2="175" y2="37" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><line x1="175" y1="37" x2="181" y2="35" stroke="#F5C5A3" stroke-width="8" stroke-linecap="round"/><path d="M150 33 L150 58" stroke="#6B9E7E" stroke-width="2.5" stroke-dasharray="5 3" marker-end="url(#la)"/><defs><marker id="la" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#6B9E7E"/></marker></defs><text x="168" y="52" font-size="10" fill="#6B9E7E">pull down</text><text x="150" y="152" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Lat Pulldown Machine</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> Seated cable machine — pull a wide bar from above your head down to your chest.<br><br><strong>How:</strong> Grip bar wider than shoulders. Pull down to upper chest, lean slightly back, squeeze shoulder blades. Let bar rise slowly.<br><br><strong>Works:</strong> Lats (sides of back), biceps.</div><div class="ex-tip">💡 Pull with your elbows, not your hands. Imagine tucking elbows into back pockets.</div></div>
+      </div>
+      <div class="exercise-row" id="ex_1_cpm">
+        <div class="ex-main" onclick="toggleEx('1','cpm')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Chest Press Machine</div><div class="ex-sub">Machine · push handles forward</div></div><div class="ex-badge">3 × 10</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-cpm')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-cpm"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="12" y="39" width="17" height="83" rx="5" fill="#C4B4A8"/><rect x="12" y="112" width="66" height="14" rx="4" fill="#D4C8BC"/><rect x="41" y="50" width="22" height="54" rx="6" fill="#C4623A"/><circle cx="52" cy="42" r="11" fill="#F5C5A3"/><line x1="41" y1="70" x2="15" y2="70" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><line x1="63" y1="70" x2="196" y2="70" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><rect x="190" y="62" width="53" height="13" rx="5" fill="#3D2B1F" opacity=".5"/><path d="M108 56 L176 56" stroke="#6B9E7E" stroke-width="2.5" stroke-dasharray="5 3" marker-end="url(#ca)"/><defs><marker id="ca" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#6B9E7E"/></marker></defs><text x="150" y="150" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Chest Press Machine</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> Seated machine — push two handles forward from chest height.<br><br><strong>How:</strong> Back flat on pad. Grip handles at chest, elbows out. Push forward until arms almost extended. Slowly return.<br><br><strong>Works:</strong> Chest, front shoulders, triceps.</div><div class="ex-tip">💡 Keep shoulders down — they tend to shrug up as you push. Consciously keep them away from ears.</div></div>
+      </div>
+      <div class="exercise-row" id="ex_1_dsp">
+        <div class="ex-main" onclick="toggleEx('1','dsp')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">DB Shoulder Press</div><div class="ex-sub">Two dumbbells · press straight overhead</div></div><div class="ex-badge">3 × 10</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-dsp')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-dsp"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="118" y="68" width="24" height="44" rx="6" fill="#C4623A"/><circle cx="130" cy="60" r="11" fill="#F5C5A3"/><line x1="118" y1="79" x2="81" y2="62" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><line x1="81" y1="62" x2="70" y2="26" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><line x1="142" y1="79" x2="179" y2="62" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><line x1="179" y1="62" x2="190" y2="26" stroke="#F5C5A3" stroke-width="9" stroke-linecap="round"/><rect x="56" y="20" width="25" height="8" rx="4" fill="#3D2B1F"/><rect x="179" y="20" width="25" height="8" rx="4" fill="#3D2B1F"/><path d="M72 58 L72 32" stroke="#6B9E7E" stroke-width="2.5" marker-end="url(#sa)"/><path d="M187 58 L187 32" stroke="#6B9E7E" stroke-width="2.5" marker-end="url(#sa)"/><defs><marker id="sa" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#6B9E7E"/></marker></defs><line x1="118" y1="112" x2="108" y2="143" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><line x1="142" y1="112" x2="152" y2="143" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><text x="150" y="153" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Dumbbell Shoulder Press</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> Dumbbell in each hand, press from shoulder height straight overhead.<br><br><strong>How:</strong> Dumbbells at shoulder height, palms forward. Brace core. Press both straight up. Lower slowly.<br><br><strong>Works:</strong> Shoulders, triceps.</div><div class="ex-tip">💡 Tighten tummy before pressing. Feeling it in lower back? Go lighter or sit down.</div></div>
+      </div>
+    </div></div>
+    <div class="section"><div class="section-label">Core</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_1_plk">
+        <div class="ex-main" onclick="toggleEx('1','plk')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Plank</div><div class="ex-sub">Hold body in a straight line</div></div><div class="ex-badge">3 × 30s</div><button class="ex-expand-btn" onclick="toggleExpand(event,'xd-plk')">▾</button></div>
+        <div class="ex-detail-panel" id="xd-plk"><svg class="ex-illustration" viewBox="0 0 300 155" fill="none"><rect x="10" y="138" width="280" height="10" rx="4" fill="#E8DDD4"/><line x1="43" y1="124" x2="242" y2="97" stroke="#F5C5A3" stroke-width="15" stroke-linecap="round"/><circle cx="253" cy="95" r="13" fill="#F5C5A3"/><rect x="85" y="97" width="103" height="20" rx="7" fill="#C4623A" opacity=".8"/><line x1="48" y1="121" x2="48" y2="138" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><line x1="68" y1="118" x2="68" y2="135" stroke="#F5C5A3" stroke-width="10" stroke-linecap="round"/><line x1="43" y1="87" x2="242" y2="60" stroke="#6B9E7E" stroke-width="1.5" stroke-dasharray="7 5"/><text x="143" y="56" font-size="10" fill="#6B9E7E" text-anchor="middle">keep this straight ✓</text><text x="150" y="153" font-family="Nunito,sans-serif" font-size="11" fill="#9B8A7A" text-anchor="middle">Forearm Plank</text></svg>
+        <div class="ex-how"><strong>What it is:</strong> Static hold on forearms and toes in a straight line.<br><br><strong>How:</strong> Elbows under shoulders. Straight line head to heels. Hold without hips sagging or rising. Breathe normally.<br><br><strong>Works:</strong> Core, shoulders, glutes.</div><div class="ex-tip">💡 Start with 15s if 30s is too hard. Perfect 15s beats saggy 30s every time.</div></div>
+      </div>
+    </div></div>
+    <div class="section"><div class="section-label">Optional Cool-Down</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_1_cd"><div class="ex-main" onclick="toggleEx('1','cd')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Treadmill Walk</div><div class="ex-sub">Slow pace, let heart rate come down</div></div><div class="ex-badge">10–15 min</div></div></div>
+    </div></div>
+    <div class="completion-bar"><div class="completion-top"><div class="completion-label">Today's Progress</div><div class="completion-pct" id="pct-1">0%</div></div><div class="completion-track"><div class="completion-fill" id="fill-1" style="width:0%"></div></div></div>
+  </div>
+
+  <!-- DAY 2 -->
+  <div class="day-card" id="day-2">
+    <div class="day-header"><div><div class="day-title">Day <span>2</span> — Interval Run</div><div class="day-subtitle">25–30 min · outdoors or treadmill</div></div><div class="day-icon">🏃‍♀️</div></div>
+    <div class="run-block"><div class="run-block-title"><div class="dot"></div>Warm-Up</div><div class="run-desc">5 min brisk walk. Get heart rate up gently before intervals.</div></div>
+    <div class="run-block highlight"><div class="run-block-title"><div class="dot"></div>Main Set · 6–8 rounds</div><div class="interval-row"><div class="interval-chip jog"><div class="chip-time">1 min</div><div class="chip-label">Jog</div></div><div class="interval-chip walk"><div class="chip-time">2 min</div><div class="chip-label">Walk</div></div></div><div class="run-desc" style="margin-top:9px;">💬 Jog at a pace where you can still hold a full conversation.</div></div>
+    <div class="run-block"><div class="run-block-title"><div class="dot"></div>Cool-Down</div><div class="run-desc">5 min easy walk. Let heart rate come back down naturally.</div></div>
+    <div class="section" style="margin-top:4px;"><div class="section-label">Mark done</div><div class="exercise-list"><div class="exercise-row" id="ex_2_run"><div class="ex-main" onclick="toggleEx('2','run')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Completed today's intervals ✅</div></div><div class="ex-badge">Done</div></div></div></div></div>
+  </div>
+
+  <!-- DAY 3 -->
+  <div class="day-card" id="day-3"><div class="rest-card"><div class="rest-icon">🌿</div><h3>Rest &amp; Recover</h3><p>Muscles grow when you rest. A gentle walk is fine — aim for 7–10k steps. Foam roll if sore.</p></div>
+  <div class="section" style="margin-top:11px;"><div class="section-label">Log rest day</div><div class="exercise-list"><div class="exercise-row" id="ex_3_rest"><div class="ex-main" onclick="toggleEx('3','rest')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Rest day logged ✅</div></div><div class="ex-badge">Done</div></div></div></div></div></div>
+
+  <!-- DAY 4 -->
+  <div class="day-card" id="day-4">
+    <div class="day-header"><div><div class="day-title">Day <span>4</span> — Full Body Strength</div><div class="day-subtitle">Same as Day 1 — try to match or beat weights</div></div><div class="day-icon">🏋️‍♀️</div></div>
+    <div class="section"><div class="section-label">Warm-Up</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_4_wu1"><div class="ex-main" onclick="toggleEx('4','wu1')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Treadmill Walk</div></div><div class="ex-badge">5–7 min</div></div></div>
+      <div class="exercise-row" id="ex_4_wu2"><div class="ex-main" onclick="toggleEx('4','wu2')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Light Stretching</div></div><div class="ex-badge">2–3 min</div></div></div>
+    </div></div>
+    <div class="section"><div class="section-label">Lower Body</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_4_lp"><div class="ex-main" onclick="toggleEx('4','lp')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Leg Press</div><div class="ex-sub">Beat Day 1 weight if it felt easy</div></div><div class="ex-badge">3 × 10</div></div></div>
+      <div class="exercise-row" id="ex_4_slc"><div class="ex-main" onclick="toggleEx('4','slc')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Seated Leg Curl</div></div><div class="ex-badge">3 × 12</div></div></div>
+      <div class="exercise-row" id="ex_4_gb"><div class="ex-main" onclick="toggleEx('4','gb')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Glute Bridge</div></div><div class="ex-badge">3 × 12</div></div></div>
+    </div></div>
+    <div class="section"><div class="section-label">Upper Body</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_4_lpd"><div class="ex-main" onclick="toggleEx('4','lpd')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Lat Pulldown</div></div><div class="ex-badge">3 × 10</div></div></div>
+      <div class="exercise-row" id="ex_4_cpm"><div class="ex-main" onclick="toggleEx('4','cpm')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Chest Press Machine</div></div><div class="ex-badge">3 × 10</div></div></div>
+      <div class="exercise-row" id="ex_4_dsp"><div class="ex-main" onclick="toggleEx('4','dsp')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">DB Shoulder Press</div></div><div class="ex-badge">3 × 10</div></div></div>
+    </div></div>
+    <div class="section"><div class="section-label">Core</div><div class="exercise-list">
+      <div class="exercise-row" id="ex_4_plk"><div class="ex-main" onclick="toggleEx('4','plk')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Plank</div></div><div class="ex-badge">3 × 30s</div></div></div>
+    </div></div>
+    <div class="completion-bar"><div class="completion-top"><div class="completion-label">Today's Progress</div><div class="completion-pct" id="pct-4">0%</div></div><div class="completion-track"><div class="completion-fill" id="fill-4" style="width:0%"></div></div></div>
+  </div>
+
+  <!-- DAY 5 -->
+  <div class="day-card" id="day-5">
+    <div class="day-header"><div><div class="day-title">Day <span>5</span> — Long Slow Run</div><div class="day-subtitle">20–25 min · adds ~5 min each week</div></div><div class="day-icon">🏃‍♀️</div></div>
+    <div class="run-block highlight"><div class="run-block-title"><div class="dot"></div>Week 1 Goal</div><div class="run-desc">20–25 min walk + light jog mix. Just keep moving at easy effort for the full duration.</div></div>
+    <div class="run-block"><div class="run-block-title"><div class="dot"></div>Progression</div><div class="run-desc">Add ~5 min each week. Goal: 60–75 min easy continuous run by weeks 10–12.</div></div>
+    <div class="section" style="margin-top:4px;"><div class="section-label">Mark done</div><div class="exercise-list"><div class="exercise-row" id="ex_5_run"><div class="ex-main" onclick="toggleEx('5','run')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Completed today's long run ✅</div></div><div class="ex-badge">Done</div></div></div></div></div>
+  </div>
+
+  <!-- DAY 6 -->
+  <div class="day-card" id="day-6"><div class="rest-card"><div class="rest-icon">☁️</div><h3>Light Rest Day</h3><p>Short easy walk only. Sleep, water, food. Foam roll anything tight.</p></div>
+  <div class="section" style="margin-top:11px;"><div class="section-label">Log rest day</div><div class="exercise-list"><div class="exercise-row" id="ex_6_rest"><div class="ex-main" onclick="toggleEx('6','rest')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Rest day logged ✅</div></div><div class="ex-badge">Done</div></div></div></div></div></div>
+
+  <!-- DAY 7 -->
+  <div class="day-card" id="day-7"><div class="rest-card"><div class="rest-icon">💤</div><h3>Full Rest Day</h3><p>Complete rest. No guilt. Recovery is where results happen. Prep meals for next week.</p></div>
+  <div class="section" style="margin-top:11px;"><div class="section-label">Log rest day</div><div class="exercise-list"><div class="exercise-row" id="ex_7_rest"><div class="ex-main" onclick="toggleEx('7','rest')"><div class="ex-check">✓</div><div class="ex-info"><div class="ex-name">Rest day logged ✅</div></div><div class="ex-badge">Done</div></div></div></div></div></div>
+
+</div><!-- /workout -->
+
+<!-- ══════════ MEALS ══════════ -->
+<div class="panel" id="panel-meals">
+  <div class="day-nav" id="mealNav">
+    <div class="day-pill strength active" data-mday="1" onclick="showMealDay(1)"><div class="day-num">1</div><div class="day-tag">STR</div><div class="day-dot"></div><div class="done-badge" id="mb1"></div></div>
+    <div class="day-pill run" data-mday="2" onclick="showMealDay(2)"><div class="day-num">2</div><div class="day-tag">RUN</div><div class="day-dot"></div><div class="done-badge" id="mb2"></div></div>
+    <div class="day-pill rest" data-mday="3" onclick="showMealDay(3)"><div class="day-num">3</div><div class="day-tag">REST</div><div class="day-dot"></div><div class="done-badge" id="mb3"></div></div>
+    <div class="day-pill strength" data-mday="4" onclick="showMealDay(4)"><div class="day-num">4</div><div class="day-tag">STR</div><div class="day-dot"></div><div class="done-badge" id="mb4"></div></div>
+    <div class="day-pill run" data-mday="5" onclick="showMealDay(5)"><div class="day-num">5</div><div class="day-tag">RUN</div><div class="day-dot"></div><div class="done-badge" id="mb5"></div></div>
+    <div class="day-pill rest" data-mday="6" onclick="showMealDay(6)"><div class="day-num">6</div><div class="day-tag">REST</div><div class="day-dot"></div><div class="done-badge" id="mb6"></div></div>
+    <div class="day-pill rest" data-mday="7" onclick="showMealDay(7)"><div class="day-num">7</div><div class="day-tag">REST</div><div class="day-dot"></div><div class="done-badge" id="mb7"></div></div>
+  </div>
+
+  <div class="meal-day-card visible" id="mday-1">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>1</span> — Meals</div><div class="day-subtitle">Strength day · high protein focus</div></div><div class="day-icon">🍽</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,350</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">100g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">120g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">47g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_1_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal · 26g protein</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">2 whole eggs + 2 egg whites — scrambled, stir-fried or boiled</div><div class="meal-item">Unlimited spinach, mushrooms, bell peppers</div><div class="meal-item">1 tsp oil</div><div class="meal-note">High protein first thing = less hunger all day.</div><button class="meal-done-btn" onclick="toggleMealDone('1','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_1_sn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🕙</div><div class="meal-info"><div class="meal-name">Mid-Morning Snack</div><div class="meal-cal">~130 kcal · 8g protein</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">30–40g roasted chana OR 12–15 almonds OR ½ scoop protein</div><button class="meal-done-btn" onclick="toggleMealDone('1','sn')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_1_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~400 kcal · 24g protein</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">150g baked/boiled sweet potato 🍠</div><div class="meal-item">80–100g paneer or firm tofu, grilled or cubed</div><div class="meal-item">Large mixed veg: broccoli, zucchini, carrots</div><div class="meal-item">1 tsp oil</div><div class="meal-note">Eat 1–2 hrs before workout if training later.</div><button class="meal-done-btn" onclick="toggleMealDone('1','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_1_pw"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">💪</div><div class="meal-info"><div class="meal-name">Post-Workout Shake</div><div class="meal-cal">~120 kcal · 22g protein</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">1 scoop whey or vegan protein + water or almond milk</div><div class="meal-item">Optional: handful berries or ½ small sweet potato</div><button class="meal-done-btn" onclick="toggleMealDone('1','pw')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_1_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal · 24g protein</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Big veggie stir-fry (cabbage, peppers, spinach, cauliflower — unlimited)</div><div class="meal-item">100–120g paneer or tofu · ½–1 tsp oil + spices</div><button class="meal-done-btn" onclick="toggleMealDone('1','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today</div><div class="water-count" id="wc1">0 / 8</div></div><div class="water-glasses" id="wg1"><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span><span class="glass" onclick="tapGlass(this,'1')">💧</span></div></div>
+  </div>
+
+  <!-- Days 2–7 condensed -->
+  <div class="meal-day-card" id="mday-2">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>2</span> — Meals</div><div class="day-subtitle">Run day · light &amp; energising</div></div><div class="day-icon">🏃‍♀️</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,350</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">100g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">125g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">46g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_2_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">2 whole eggs + 2 egg whites + veggies</div><button class="meal-done-btn" onclick="toggleMealDone('2','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_2_sn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🕙</div><div class="meal-info"><div class="meal-name">Pre-Run Snack</div><div class="meal-cal">~130 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Small banana or ½ sweet potato — 30–45 min before run</div><button class="meal-done-btn" onclick="toggleMealDone('2','sn')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_2_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~400 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">150g sweet potato + 80–100g paneer/tofu + large mixed veg</div><button class="meal-done-btn" onclick="toggleMealDone('2','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_2_pw"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">💪</div><div class="meal-info"><div class="meal-name">Post-Run Shake</div><div class="meal-cal">~120 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">1 scoop protein + water or almond milk</div><button class="meal-done-btn" onclick="toggleMealDone('2','pw')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_2_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Big veggie stir-fry + 100–120g paneer/tofu + minimal oil</div><button class="meal-done-btn" onclick="toggleMealDone('2','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today</div><div class="water-count" id="wc2">0 / 8</div></div><div class="water-glasses" id="wg2"><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span><span class="glass" onclick="tapGlass(this,'2')">💧</span></div></div>
+  </div>
+
+  <div class="meal-day-card" id="mday-3">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>3</span> — Meals</div><div class="day-subtitle">Rest day · slightly lower carbs</div></div><div class="day-icon">🌿</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,300</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">95g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">110g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">45g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_3_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">2 whole eggs + 2 egg whites + veggies</div><button class="meal-done-btn" onclick="toggleMealDone('3','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_3_sn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🕙</div><div class="meal-info"><div class="meal-name">Snack</div><div class="meal-cal">~130 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Roasted chana OR almonds OR ½ scoop protein</div><button class="meal-done-btn" onclick="toggleMealDone('3','sn')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_3_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~380 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">120g sweet potato + paneer/tofu + veg</div><button class="meal-done-btn" onclick="toggleMealDone('3','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_3_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Big veggie stir-fry + paneer/tofu</div><button class="meal-done-btn" onclick="toggleMealDone('3','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today</div><div class="water-count" id="wc3">0 / 8</div></div><div class="water-glasses" id="wg3"><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span><span class="glass" onclick="tapGlass(this,'3')">💧</span></div></div>
+  </div>
+
+  <div class="meal-day-card" id="mday-4">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>4</span> — Meals</div><div class="day-subtitle">Strength day · same as Day 1</div></div><div class="day-icon">🏋️‍♀️</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,350</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">100g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">120g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">47g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_4_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">2 whole eggs + 2 egg whites + veggies + 1 tsp oil</div><button class="meal-done-btn" onclick="toggleMealDone('4','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_4_sn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🕙</div><div class="meal-info"><div class="meal-name">Snack</div><div class="meal-cal">~130 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Roasted chana OR almonds OR ½ scoop protein</div><button class="meal-done-btn" onclick="toggleMealDone('4','sn')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_4_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~400 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">150g sweet potato + 80–100g paneer/tofu + large veg + 1 tsp oil</div><button class="meal-done-btn" onclick="toggleMealDone('4','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_4_pw"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">💪</div><div class="meal-info"><div class="meal-name">Post-Workout Shake</div><div class="meal-cal">~120 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">1 scoop protein + almond milk + optional berries</div><button class="meal-done-btn" onclick="toggleMealDone('4','pw')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_4_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Big veggie stir-fry + paneer/tofu + minimal oil</div><button class="meal-done-btn" onclick="toggleMealDone('4','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today</div><div class="water-count" id="wc4">0 / 8</div></div><div class="water-glasses" id="wg4"><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span><span class="glass" onclick="tapGlass(this,'4')">💧</span></div></div>
+  </div>
+
+  <div class="meal-day-card" id="mday-5">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>5</span> — Meals</div><div class="day-subtitle">Long run day · slightly more carbs</div></div><div class="day-icon">🏃‍♀️</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,400</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">100g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">135g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">47g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_5_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Eggs + veggies as usual</div><button class="meal-done-btn" onclick="toggleMealDone('5','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_5_sn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🕙</div><div class="meal-info"><div class="meal-name">Pre-Run Snack</div><div class="meal-cal">~150 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Banana or 100g sweet potato — 45–60 min before run</div><div class="meal-note">Longer run needs more fuel. Don't skip this one.</div><button class="meal-done-btn" onclick="toggleMealDone('5','sn')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_5_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~420 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">175g sweet potato + paneer/tofu + veg</div><button class="meal-done-btn" onclick="toggleMealDone('5','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_5_pw"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">💪</div><div class="meal-info"><div class="meal-name">Post-Run Shake</div><div class="meal-cal">~120 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">1 scoop protein + optional berries</div><button class="meal-done-btn" onclick="toggleMealDone('5','pw')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_5_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Big veggie stir-fry + paneer/tofu + minimal oil</div><button class="meal-done-btn" onclick="toggleMealDone('5','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today — aim for full 4L</div><div class="water-count" id="wc5">0 / 8</div></div><div class="water-glasses" id="wg5"><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span><span class="glass" onclick="tapGlass(this,'5')">💧</span></div></div>
+  </div>
+
+  <div class="meal-day-card" id="mday-6">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>6</span> — Meals</div><div class="day-subtitle">Light rest · keep clean</div></div><div class="day-icon">☁️</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,300</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">95g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">110g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">44g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_6_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Eggs + veggies</div><button class="meal-done-btn" onclick="toggleMealDone('6','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_6_sn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🕙</div><div class="meal-info"><div class="meal-name">Snack</div><div class="meal-cal">~120 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Almonds or roasted chana</div><button class="meal-done-btn" onclick="toggleMealDone('6','sn')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_6_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~380 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">120g sweet potato + paneer/tofu + veg</div><button class="meal-done-btn" onclick="toggleMealDone('6','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_6_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Veggie stir-fry + paneer/tofu</div><button class="meal-done-btn" onclick="toggleMealDone('6','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today</div><div class="water-count" id="wc6">0 / 8</div></div><div class="water-glasses" id="wg6"><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span><span class="glass" onclick="tapGlass(this,'6')">💧</span></div></div>
+  </div>
+
+  <div class="meal-day-card" id="mday-7">
+    <div class="day-header" style="margin-top:12px;"><div><div class="day-title">Day <span>7</span> — Meals</div><div class="day-subtitle">Full rest + meal prep day</div></div><div class="day-icon">💤</div></div>
+    <div class="macro-strip"><div class="macro-chip kcal"><div class="mc-val">1,300</div><div class="mc-label">kcal</div></div><div class="macro-chip prot"><div class="mc-val">95g+</div><div class="mc-label">Protein</div></div><div class="macro-chip"><div class="mc-val">110g</div><div class="mc-label">Carbs</div></div><div class="macro-chip"><div class="mc-val">44g</div><div class="mc-label">Fat</div></div></div>
+    <div class="meal-card" id="mc_7_bk"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌅</div><div class="meal-info"><div class="meal-name">Breakfast</div><div class="meal-cal">~300 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Eggs + veggies</div><button class="meal-done-btn" onclick="toggleMealDone('7','bk')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_7_ln"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">☀️</div><div class="meal-info"><div class="meal-name">Lunch</div><div class="meal-cal">~380 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">120g sweet potato + paneer/tofu + veg</div><div class="meal-note">Batch-cook sweet potato and portion protein for the week ahead!</div><button class="meal-done-btn" onclick="toggleMealDone('7','ln')">Mark as eaten ✓</button></div></div>
+    <div class="meal-card" id="mc_7_dn"><div class="meal-header" onclick="toggleMeal(this)"><div class="meal-check">✓</div><div class="meal-icon">🌙</div><div class="meal-info"><div class="meal-name">Dinner</div><div class="meal-cal">~340 kcal</div></div><div class="meal-arrow">▾</div></div><div class="meal-body"><div class="meal-item">Veggie stir-fry + paneer/tofu</div><button class="meal-done-btn" onclick="toggleMealDone('7','dn')">Mark as eaten ✓</button></div></div>
+    <div class="water-strip"><div class="water-top"><div class="water-label">Water today</div><div class="water-count" id="wc7">0 / 8</div></div><div class="water-glasses" id="wg7"><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span><span class="glass" onclick="tapGlass(this,'7')">💧</span></div></div>
+  </div>
+
+  <div class="rules-strip" style="margin-top:11px;"><div class="rules-title">Protein Swaps</div><div class="rules-grid"><div class="rule-item"><span>🧀</span>Paneer ↔ Tofu ↔ Soya chunks ↔ Tempeh ↔ Greek yogurt</div><div class="rule-item"><span>📱</span>Track on Fittr or MyFitnessPal for precision</div></div></div>
+</div>
+
+<!-- ══════════ RULES ══════════ -->
+<div class="panel" id="panel-rules">
+  <div style="margin:12px 16px 0;"><div class="day-header"><div><div class="day-title"><span>Rules</span> &amp; Timeline</div><div class="day-subtitle">Especially important near 40</div></div><div class="day-icon">📋</div></div></div>
+  <div class="rules-strip" style="margin-top:0;margin-left:16px;margin-right:16px;"><div class="rules-title">Golden Rules</div><div class="rules-grid">
+    <div class="rule-item"><span>🥩</span>Hit 90g+ protein daily — protects muscle in a deficit</div>
+    <div class="rule-item"><span>🐢</span>Never run hard — always conversational pace</div>
+    <div class="rule-item"><span>😴</span>Rest days mandatory — muscles grow during rest</div>
+    <div class="rule-item"><span>👟</span>Good running shoes — non-negotiable</div>
+    <div class="rule-item"><span>⚖️</span>Increase weights every 2 weeks — form first, always</div>
+    <div class="rule-item"><span>🚦</span>Soreness = OK. Sharp/joint pain = stop immediately</div>
+    <div class="rule-item"><span>🌙</span>7–9 hrs sleep — cortisol near 40 affects fat storage</div>
+    <div class="rule-item"><span>🔄</span>Stretch after every session. Foam roll when sore</div>
+    <div class="rule-item"><span>💊</span>Vitamins: ask doctor about D3, B12, Magnesium</div>
+  </div></div>
+  <div class="progress-strip" style="margin-top:11px;"><div class="progress-title">Goal Timeline</div><div class="week-rows">
+    <div class="week-row"><div class="week-num">Wk 1–4<small>Foundation</small></div><div class="week-goals"><div class="week-goal">Build habit — showing up counts</div><div class="week-goal">Stamina slowly improves</div></div></div>
+    <div class="week-row"><div class="week-num">Wk 5–8<small>Progress</small></div><div class="week-goals"><div class="week-goal">Fat loss and energy shift visible</div><div class="week-goal">Runs getting longer and easier</div></div></div>
+    <div class="week-row"><div class="week-num">Wk 9–12<small>Results</small></div><div class="week-goals"><div class="week-goal">Continuous jogging possible</div><div class="week-goal">Visible toning and fitness</div></div></div>
+  </div></div>
+  <div class="rules-strip" style="margin-top:11px;background:#3D2B1F;"><div class="rules-title" style="color:var(--gold);">Tracking &amp; Adjustments</div><div class="rules-grid">
+    <div class="rule-item"><span>⚖️</span>Weigh weekly — same time, same conditions (morning)</div>
+    <div class="rule-item"><span>📉</span>No loss after 2 weeks → cut 100–150 kcal from carbs/fat</div>
+    <div class="rule-item"><span>⚡</span>Workouts suffering → add 20–30g carbs (sweet potato)</div>
+    <div class="rule-item"><span>🥗</span>Always hungry → add more non-starchy veg (unlimited!)</div>
+    <div class="rule-item"><span>📏</span>Measure waist + hips every 4 weeks — scale can lie</div>
+  </div></div>
+  <div style="height:20px;"></div>
+</div>
+
+</div><!-- /scroll-area -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════
+// SUPABASE
+// ════════════════════════════════
+const SUPA_URL = 'https://xjzviuqjmoyevoozwscx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqenZpdXFqbW95ZXZvb3p3c2N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzM4MzcsImV4cCI6MjA5MjI0OTgzN30.vL5wowp1xjCguIB5QtHtfEFWzEY4teW1jrskLj8wfPo';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function setSyncDot(state){ const d=document.getElementById('syncDot'); d.className='sync-dot '+state; }
+
+// ════════════════════════════════
+// MARATHON COUNTDOWN
+// ════════════════════════════════
+function setMarathonCountdown(){
+  const marathon = new Date('2026-04-26'); // London Marathon 2026
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const days = Math.ceil((marathon - today) / 86400000);
+  document.getElementById('marathonDays').textContent = days > 0 ? days : '🏅 Race day!';
+}
+
+// ════════════════════════════════
+// GREETING
+// ════════════════════════════════
+function setGreeting(){
+  const h = new Date().getHours();
+  document.getElementById('timeGreet').textContent = h<12?'morning':h<17?'afternoon':'evening';
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
+  document.getElementById('dashSub').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+// ════════════════════════════════
+// TABS / NAVIGATION
+// ════════════════════════════════
+function switchTab(tab){
+  ['dash','workout','meals','rules'].forEach((id,i)=>{
+    document.querySelectorAll('.nav-tab')[i].classList.toggle('active',id===tab);
+    document.getElementById('panel-'+id).classList.toggle('visible',id===tab);
+  });
+  if(tab==='dash') loadDashboard();
+}
+
+function showDay(n){
+  document.querySelectorAll('.day-card').forEach(c=>c.classList.remove('visible'));
+  document.querySelectorAll('#dayNav .day-pill').forEach(p=>p.classList.remove('active'));
+  document.getElementById('day-'+n).classList.add('visible');
+  document.querySelector('#dayNav [data-day="'+n+'"]').classList.add('active');
+}
+
+function showMealDay(n){
+  document.querySelectorAll('.meal-day-card').forEach(c=>c.classList.remove('visible'));
+  document.querySelectorAll('#mealNav .day-pill').forEach(p=>p.classList.remove('active'));
+  document.getElementById('mday-'+n).classList.add('visible');
+  document.querySelector('#mealNav [data-mday="'+n+'"]').classList.add('active');
+}
+
+// ════════════════════════════════
+// EXERCISES
+// ════════════════════════════════
+async function toggleEx(day, id){
+  const elemId = 'ex_'+day+'_'+id;
+  const row = document.getElementById(elemId);
+  const isDone = !row.classList.contains('done');
+  row.classList.add('loading');
+  setSyncDot('syncing');
+  try {
+    const { error } = await sb.from('exercises').upsert({
+      log_date: todayKey(), day_num: parseInt(day), exercise_id: id, done: isDone
+    }, { onConflict: 'log_date,day_num,exercise_id' });
+    if(error) throw error;
+    row.classList.toggle('done', isDone);
+    setSyncDot('synced');
+    updateCompletionBar(day);
+    updateWorkoutBadge(day);
+    showToast(isDone ? '✓ Saved' : 'Unchecked');
+  } catch(e){
+    setSyncDot('error');
+    showToast('⚠️ Save failed — check connection');
+    console.error(e);
+  } finally { row.classList.remove('loading'); }
+}
+
+function updateCompletionBar(day){
+  const card = document.getElementById('day-'+day);
+  if(!card) return;
+  const rows = card.querySelectorAll('.exercise-row');
+  const done = card.querySelectorAll('.exercise-row.done').length;
+  const pct = rows.length ? Math.round((done/rows.length)*100) : 0;
+  const f = document.getElementById('fill-'+day), p = document.getElementById('pct-'+day);
+  if(f) f.style.width = pct+'%';
+  if(p) p.textContent = pct+'%';
+}
+
+function updateWorkoutBadge(day){
+  const card = document.getElementById('day-'+day);
+  const badge = document.getElementById('wb'+day);
+  if(!card||!badge) return;
+  const rows = card.querySelectorAll('.exercise-row');
+  const done = card.querySelectorAll('.exercise-row.done').length;
+  badge.classList.toggle('show', rows.length>0 && done===rows.length);
+}
+
+// ════════════════════════════════
+// MEALS
+// ════════════════════════════════
+async function toggleMealDone(day, id){
+  const card = document.getElementById('mc_'+day+'_'+id);
+  const isDone = !card.classList.contains('done');
+  card.classList.add('loading');
+  setSyncDot('syncing');
+  try {
+    const { error } = await sb.from('meals').upsert({
+      log_date: todayKey(), day_num: parseInt(day), meal_id: id, done: isDone
+    }, { onConflict: 'log_date,day_num,meal_id' });
+    if(error) throw error;
+    card.classList.toggle('done', isDone);
+    const btn = card.querySelector('.meal-done-btn');
+    if(btn) btn.textContent = isDone ? 'Eaten ✓ (tap to undo)' : 'Mark as eaten ✓';
+    setSyncDot('synced');
+    updateMealBadge(day);
+    showToast(isDone ? '🥗 Meal logged' : 'Unlogged');
+  } catch(e){
+    setSyncDot('error');
+    showToast('⚠️ Save failed');
+    console.error(e);
+  } finally { card.classList.remove('loading'); }
+}
+
+function toggleMeal(header){
+  const body = header.nextElementSibling;
+  const wasOpen = body.classList.contains('open');
+  header.closest('.meal-day-card').querySelectorAll('.meal-body').forEach(b=>b.classList.remove('open'));
+  header.closest('.meal-day-card').querySelectorAll('.meal-header').forEach(h=>h.classList.remove('open'));
+  if(!wasOpen){ body.classList.add('open'); header.classList.add('open'); }
+}
+
+function updateMealBadge(day){
+  const cards = document.querySelectorAll(`[id^="mc_${day}_"]`);
+  const badge = document.getElementById('mb'+day);
+  if(!badge) return;
+  const done = [...cards].filter(c=>c.classList.contains('done')).length;
+  badge.classList.toggle('show', cards.length>0 && done===cards.length);
+}
+
+// ════════════════════════════════
+// WATER
+// ════════════════════════════════
+async function tapGlass(glass, day){
+  const container = document.getElementById('wg'+day);
+  const glasses = container.querySelectorAll('.glass');
+  const idx = Array.from(glasses).indexOf(glass);
+  const currentFilled = [...glasses].filter(g=>g.classList.contains('filled')).length;
+  const newCount = (currentFilled === idx+1) ? idx : idx+1;
+  glasses.forEach((g,i) => g.classList.toggle('filled', i<newCount));
+  document.getElementById('wc'+day).textContent = newCount+' / 8';
+  setSyncDot('syncing');
+  try {
+    const { error } = await sb.from('water').upsert({
+      log_date: todayKey(), day_num: parseInt(day), glasses: newCount
+    }, { onConflict: 'log_date,day_num' });
+    if(error) throw error;
+    setSyncDot('synced');
+  } catch(e){ setSyncDot('error'); console.error(e); }
+}
+
+// ════════════════════════════════
+// WEIGHT
+// ════════════════════════════════
+async function logWeight(){
+  const input = document.getElementById('weightInput');
+  const val = parseFloat(input.value);
+  if(isNaN(val)||val<20||val>300){ input.style.borderColor='var(--terra)'; return; }
+  input.style.borderColor='';
+  setSyncDot('syncing');
+  try {
+    const { error } = await sb.from('weight_log').insert({ log_date: todayKey(), weight_kg: val });
+    if(error) throw error;
+    input.value = '';
+    setSyncDot('synced');
+    showToast('⚖️ Weight logged!');
+    loadWeightHistory();
+    loadDashboard();
+  } catch(e){ setSyncDot('error'); showToast('⚠️ Save failed'); console.error(e); }
+}
+
+async function loadWeightHistory(){
+  const container = document.getElementById('weightHistory');
+  try {
+    const { data, error } = await sb.from('weight_log').select('*').order('log_date',{ascending:false}).order('created_at',{ascending:false}).limit(20);
+    if(error) throw error;
+    if(!data||!data.length){ container.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0;">No entries yet — log your first weight above.</div>'; return; }
+    container.innerHTML = data.map((w,i)=>{
+      let delta = '';
+      if(i < data.length-1){
+        const diff = (w.weight_kg - data[i+1].weight_kg).toFixed(1);
+        const cls = diff<0?'down':diff>0?'up':'same';
+        const prefix = diff>0?'+':'';
+        delta = `<span class="we-delta ${cls}">${prefix}${diff}kg</span>`;
+      }
+      const d = new Date(w.log_date+'T00:00:00');
+      const dateStr = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      return `<div class="weight-entry"><span class="we-date">${dateStr}</span><span class="we-val">${w.weight_kg} kg</span>${delta}</div>`;
+    }).join('');
+    // update dashboard weight
+    document.getElementById('dashWeight').textContent = data[0].weight_kg+' kg';
+    if(data.length>1){
+      const diff = (data[0].weight_kg - data[1].weight_kg).toFixed(1);
+      document.getElementById('dashWeightDelta').textContent = (diff>0?'↑ ':'↓ ')+Math.abs(diff)+'kg from last';
+    }
+  } catch(e){ container.innerHTML='<div style="font-size:12px;color:var(--muted);">Could not load history.</div>'; }
+}
+
+// ════════════════════════════════
+// EXERCISE EXPAND
+// ════════════════════════════════
+function toggleExpand(e, id){
+  e.stopPropagation();
+  const panel = document.getElementById(id), btn = e.currentTarget;
+  const wasOpen = panel.classList.contains('open');
+  document.querySelectorAll('.ex-detail-panel').forEach(p=>p.classList.remove('open'));
+  document.querySelectorAll('.ex-expand-btn').forEach(b=>b.classList.remove('open'));
+  if(!wasOpen){ panel.classList.add('open'); btn.classList.add('open'); }
+}
+
+// ════════════════════════════════
+// LOAD TODAY'S DATA
+// ════════════════════════════════
+async function loadTodayData(){
+  setSyncDot('syncing');
+  try {
+    const today = todayKey();
+    // Load exercises
+    const { data: exData } = await sb.from('exercises').select('*').eq('log_date', today);
+    if(exData) exData.forEach(r=>{
+      if(r.done){
+        const row = document.getElementById(`ex_${r.day_num}_${r.exercise_id}`);
+        if(row) row.classList.add('done');
+      }
+    });
+    // Load meals
+    const { data: mealData } = await sb.from('meals').select('*').eq('log_date', today);
+    if(mealData) mealData.forEach(r=>{
+      if(r.done){
+        const card = document.getElementById(`mc_${r.day_num}_${r.meal_id}`);
+        if(card){
+          card.classList.add('done');
+          const btn = card.querySelector('.meal-done-btn');
+          if(btn) btn.textContent = 'Eaten ✓ (tap to undo)';
+        }
+      }
+    });
+    // Load water
+    const { data: waterData } = await sb.from('water').select('*').eq('log_date', today);
+    if(waterData) waterData.forEach(r=>{
+      const count = r.glasses||0;
+      const container = document.getElementById('wg'+r.day_num);
+      if(!container) return;
+      container.querySelectorAll('.glass').forEach((g,i)=>g.classList.toggle('filled',i<count));
+      const wc = document.getElementById('wc'+r.day_num);
+      if(wc) wc.textContent = count+' / 8';
+    });
+    // Update all bars + badges
+    for(let d=1;d<=7;d++){ updateCompletionBar(d); updateWorkoutBadge(d); updateMealBadge(d); }
+    setSyncDot('synced');
+  } catch(e){ setSyncDot('error'); console.error(e); }
+}
+
+// ════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════
+async function loadDashboard(){
+  try {
+    const today = todayKey();
+    // Streak — count consecutive days with any exercise done
+    const { data: allEx } = await sb.from('exercises').select('log_date,done').eq('done',true).order('log_date',{ascending:false});
+    const doneDates = [...new Set((allEx||[]).map(r=>r.log_date))];
+    let streak = 0;
+    const now = new Date();
+    for(let i=0;i<365;i++){
+      const d = new Date(now); d.setDate(d.getDate()-i);
+      const dk = d.toISOString().slice(0,10);
+      if(doneDates.includes(dk)) streak++;
+      else if(i>0) break;
+    }
+    document.getElementById('statStreak').innerHTML = streak+'<span>🔥</span>';
+    document.getElementById('statTotal').innerHTML = doneDates.length+'<span>✓</span>';
+
+    // This week %
+    const weekDates = getThisWeekDates();
+    const weekDone = weekDates.filter(d=>doneDates.includes(d)).length;
+    document.getElementById('statWeek').innerHTML = Math.round((weekDone/7)*100)+'<span>%</span>';
+
+    // Week bars
+    const labels = ['M','T','W','T','F','S','S'];
+    document.getElementById('wsBars').innerHTML = weekDates.map((dk,i)=>{
+      const hasDone = doneDates.includes(dk);
+      const isPast = dk <= today;
+      const h = isPast && hasDone ? '100%' : isPast ? '8%' : '0%';
+      const cls = hasDone ? 'workout' : 'empty';
+      const isToday = dk === today;
+      return `<div class="ws-bar-wrap"><div class="ws-bar-track"><div class="ws-bar-fill ${cls}" style="height:${h}"></div></div><div class="ws-day-label ${isToday?'today':''}">${labels[i]}</div></div>`;
+    }).join('');
+
+    // Today's water (max across days)
+    const { data: waterToday } = await sb.from('water').select('glasses').eq('log_date',today);
+    const totalWater = (waterToday||[]).reduce((s,r)=>Math.max(s,r.glasses||0),0);
+    document.getElementById('dashWater').textContent = totalWater+'/8';
+
+    // Today's meals
+    const { data: mealsToday } = await sb.from('meals').select('meal_id').eq('log_date',today).eq('done',true);
+    const uniqueMeals = new Set((mealsToday||[]).map(r=>r.meal_id)).size;
+    document.getElementById('dashMeals').textContent = uniqueMeals+'/5';
+
+    // Weight
+    await loadWeightHistory();
+  } catch(e){ console.error('Dashboard load error',e); }
+}
+
+function getThisWeekDates(){
+  const dates = [];
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day===0?-6:1);
+  for(let i=0;i<7;i++){
+    const d = new Date(now); d.setDate(diff+i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+  return dates;
+}
+
+// ════════════════════════════════
+// TOAST
+// ════════════════════════════════
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+setGreeting();
+setMarathonCountdown();
+loadTodayData();
+loadDashboard();
+</script>
+</body>
+</html>
