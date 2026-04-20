@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shreya's Progress</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#FAF7F2;--warm:#FFF9F4;--dark:#1C1812;--terra:#C4623A;--terra-l:#E8845E;--sage:#6B9E7E;--sage-l:#A2C4B0;--gold:#D4A040;--muted:#9B8A7A;--border:#E8DDD4;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--cream);font-family:'Nunito',sans-serif;color:var(--dark);min-height:100vh;padding-bottom:40px;}
+
+.header{background:var(--dark);padding:32px 24px 24px;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(196,98,58,.3) 0%,transparent 55%);}
+.header-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--terra-l);margin-bottom:5px;position:relative;}
+.header h1{font-family:'Playfair Display',serif;font-size:26px;color:white;position:relative;}
+.header h1 em{color:var(--terra-l);font-style:italic;}
+.header-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:6px;position:relative;}
+.view-badge{display:inline-block;background:rgba(107,158,126,.2);border:1px solid rgba(107,158,126,.4);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--sage-l);letter-spacing:1px;margin-top:10px;position:relative;}
+.marathon-pill{margin-top:12px;position:relative;display:inline-flex;align-items:center;gap:8px;background:rgba(212,160,64,.15);border:1px solid rgba(212,160,64,.3);border-radius:20px;padding:6px 14px;}
+.mp-days{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);}
+.mp-label{font-size:11px;color:rgba(255,255,255,.6);}
+
+.section{margin:20px 16px 0;}
+.section-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.stat-card{background:var(--dark);border-radius:13px;padding:14px 10px;text-align:center;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(196,98,58,.18) 0%,transparent 70%);}
+.stat-val{font-family:'Playfair Display',serif;font-size:26px;color:white;position:relative;line-height:1;}
+.stat-val span{font-size:13px;}
+.stat-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:3px;position:relative;}
+
+.week-card{background:var(--warm);border:1.5px solid var(--border);border-radius:13px;padding:14px 16px;}
+.wc-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.ws-bars{display:flex;gap:6px;align-items:flex-end;height:60px;}
+.ws-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;}
+.ws-bar-track{flex:1;width:100%;background:var(--border);border-radius:5px;overflow:hidden;display:flex;align-items:flex-end;}
+.ws-bar-fill{width:100%;border-radius:5px;transition:height .6s cubic-bezier(.34,1.56,.64,1);}
+.ws-bar-fill.done{background:linear-gradient(180deg,var(--terra-l),var(--terra));}
+.ws-bar-fill.empty{background:var(--border);}
+.ws-day-label{font-size:9px;font-weight:700;color:var(--muted);}
+.ws-day-label.today{color:var(--terra);}
+
+.today-grid{display:flex;flex-direction:column;gap:8px;}
+.today-row{background:var(--warm);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.tr-icon{font-size:22px;}
+.tr-info{flex:1;}
+.tr-title{font-size:13px;font-weight:600;}
+.tr-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.tr-val{font-family:'Playfair Display',serif;font-size:20px;color:var(--terra);}
+.tr-val.good{color:var(--sage);}
+
+.weight-list{display:flex;flex-direction:column;gap:6px;}
+.weight-row{background:var(--warm);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;}
+.wr-date{font-size:12px;color:var(--muted);}
+.wr-val{font-family:'Playfair Display',serif;font-size:18px;}
+.wr-delta{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.wr-delta.down{background:#E8F5EF;color:var(--sage);}
+.wr-delta.up{background:#FFF0EB;color:var(--terra);}
+
+.history-list{display:flex;flex-direction:column;gap:6px;}
+.history-row{background:var(--warm);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;}
+.hr-date{font-size:12px;color:var(--muted);}
+.hr-badges{display:flex;gap:5px;}
+.hr-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--border);color:var(--brown);}
+.hr-badge.done{background:#C8E8D4;color:var(--sage);}
+
+.footer{margin:24px 16px 0;background:var(--dark);border-radius:13px;padding:14px 16px;text-align:center;}
+.footer p{font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;}
+.footer strong{color:var(--terra-l);}
+
+.loading{font-size:12px;color:var(--muted);padding:12px 0;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Progress Report</div>
+  <h1>Shreya's <em>Journey</em></h1>
+  <div class="header-sub" id="lastUpdated">Loading...</div>
+  <div class="view-badge">👁 READ-ONLY VIEW</div><br>
+  <div class="marathon-pill">
+    <div class="mp-days" id="mDays">—</div>
+    <div class="mp-label">days to London Marathon 🏅</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">All-Time Stats</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="sStreak">—<span>🔥</span></div><div class="stat-label">Streak</div></div>
+    <div class="stat-card"><div class="stat-val" id="sTotal">—<span>✓</span></div><div class="stat-label">Days Done</div></div>
+    <div class="stat-card"><div class="stat-val" id="sWeek">—<span>%</span></div><div class="stat-label">This Week</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">This Week</div>
+  <div class="week-card">
+    <div class="wc-title">Workout Completion</div>
+    <div class="ws-bars" id="shareBars"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Today</div>
+  <div class="today-grid">
+    <div class="today-row"><div class="tr-icon">🏋️</div><div class="tr-info"><div class="tr-title">Workout</div><div class="tr-sub">Exercises completed today</div></div><div class="tr-val" id="todayEx">—</div></div>
+    <div class="today-row"><div class="tr-icon">🥗</div><div class="tr-info"><div class="tr-title">Meals</div><div class="tr-sub">Meals logged today</div></div><div class="tr-val" id="todayMeals">—</div></div>
+    <div class="today-row"><div class="tr-icon">💧</div><div class="tr-info"><div class="tr-title">Water</div><div class="tr-sub">Glasses today</div></div><div class="tr-val" id="todayWater">—</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Weight Trend</div>
+  <div class="weight-list" id="shareWeights"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Recent Activity (Last 14 Days)</div>
+  <div class="history-list" id="shareHistory"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="footer">
+  <p>This is a <strong>read-only view</strong> of Shreya's training progress.<br>London Marathon 2026 🏅 — Slacking is not an option!</p>
+</div>
+
+<script>
+const SUPA_URL = 'https://xjzviuqjmoyevoozwscx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqenZpdXFqbW95ZXZvb3p3c2N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzM4MzcsImV4cCI6MjA5MjI0OTgzN30.vL5wowp1xjCguIB5QtHtfEFWzEY4teW1jrskLj8wfPo';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+
+function getThisWeekDates(){
+  const dates=[], now=new Date(), day=now.getDay(), diff=now.getDate()-day+(day===0?-6:1);
+  for(let i=0;i<7;i++){ const d=new Date(now); d.setDate(diff+i); dates.push(d.toISOString().slice(0,10)); }
+  return dates;
+}
+
+function formatDate(ds){
+  return new Date(ds+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+async function loadAll(){
+  const today = todayKey();
+  const marathon = new Date('2026-07-21'); // London Marathon 21 July 2026
+  const days = Math.ceil((marathon - new Date().setHours(0,0,0,0)) / 86400000);
+  document.getElementById('mDays').textContent = days;
+  document.getElementById('lastUpdated').textContent = 'Last refreshed: '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+
+  // All exercises
+  const { data: allEx } = await sb.from('exercises').select('log_date,done').eq('done',true).order('log_date',{ascending:false});
+  const doneDates = [...new Set((allEx||[]).map(r=>r.log_date))];
+
+  // Streak
+  let streak=0;
+  const now=new Date();
+  for(let i=0;i<365;i++){
+    const d=new Date(now); d.setDate(d.getDate()-i);
+    const dk=d.toISOString().slice(0,10);
+    if(doneDates.includes(dk)) streak++;
+    else if(i>0) break;
+  }
+  document.getElementById('sStreak').innerHTML=streak+'<span>🔥</span>';
+  document.getElementById('sTotal').innerHTML=doneDates.length+'<span>✓</span>';
+
+  // Week
+  const weekDates = getThisWeekDates();
+  const weekDone = weekDates.filter(d=>doneDates.includes(d)).length;
+  document.getElementById('sWeek').innerHTML=Math.round((weekDone/7)*100)+'<span>%</span>';
+
+  // Week bars
+  const labels=['M','T','W','T','F','S','S'];
+  document.getElementById('shareBars').innerHTML = weekDates.map((dk,i)=>{
+    const hasDone = doneDates.includes(dk);
+    const isPast = dk<=today;
+    const h = isPast&&hasDone?'100%':isPast?'8%':'0%';
+    return `<div class="ws-bar-wrap"><div class="ws-bar-track"><div class="ws-bar-fill ${hasDone?'done':'empty'}" style="height:${h}"></div></div><div class="ws-day-label ${dk===today?'today':''}">${labels[i]}</div></div>`;
+  }).join('');
+
+  // Today stats
+  const { data: exToday } = await sb.from('exercises').select('exercise_id').eq('log_date',today).eq('done',true);
+  document.getElementById('todayEx').textContent = (exToday||[]).length;
+  document.getElementById('todayEx').className = 'tr-val'+((exToday||[]).length>0?' good':'');
+
+  const { data: mealsToday } = await sb.from('meals').select('meal_id').eq('log_date',today).eq('done',true);
+  const uniqueMeals = new Set((mealsToday||[]).map(r=>r.meal_id)).size;
+  document.getElementById('todayMeals').textContent = uniqueMeals+'/5';
+  document.getElementById('todayMeals').className = 'tr-val'+(uniqueMeals>=3?' good':'');
+
+  const { data: waterToday } = await sb.from('water').select('glasses').eq('log_date',today);
+  const maxWater = (waterToday||[]).reduce((s,r)=>Math.max(s,r.glasses||0),0);
+  document.getElementById('todayWater').textContent = maxWater+'/8';
+  document.getElementById('todayWater').className = 'tr-val'+(maxWater>=6?' good':'');
+
+  // Weight
+  const { data: weights } = await sb.from('weight_log').select('*').order('log_date',{ascending:false}).order('created_at',{ascending:false}).limit(10);
+  const wc = document.getElementById('shareWeights');
+  if(!weights||!weights.length){ wc.innerHTML='<div class="loading">No weight entries yet.</div>'; }
+  else { wc.innerHTML = weights.map((w,i)=>{
+    let delta='';
+    if(i<weights.length-1){
+      const diff=(w.weight_kg-weights[i+1].weight_kg).toFixed(1);
+      const cls=diff<0?'down':'up';
+      delta=`<span class="wr-delta ${cls}">${diff>0?'+':''}${diff}kg</span>`;
+    }
+    return `<div class="weight-row"><span class="wr-date">${formatDate(w.log_date)}</span><span class="wr-val">${w.weight_kg} kg</span>${delta}</div>`;
+  }).join(''); }
+
+  // History last 14 days
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-14);
+  const cutoffStr = cutoff.toISOString().slice(0,10);
+  const { data: histEx } = await sb.from('exercises').select('log_date').eq('done',true).gte('log_date',cutoffStr).order('log_date',{ascending:false});
+  const { data: histMeals } = await sb.from('meals').select('log_date').eq('done',true).gte('log_date',cutoffStr);
+  const exByDate = {};
+  (histEx||[]).forEach(r=>{ exByDate[r.log_date]=(exByDate[r.log_date]||0)+1; });
+  const mealsByDate = {};
+  (histMeals||[]).forEach(r=>{ mealsByDate[r.log_date]=(mealsByDate[r.log_date]||0)+1; });
+  const allHistDates = [...new Set([...Object.keys(exByDate),...Object.keys(mealsByDate)])].sort((a,b)=>b.localeCompare(a)).slice(0,14);
+  const hc = document.getElementById('shareHistory');
+  if(!allHistDates.length){ hc.innerHTML='<div class="loading">No activity yet — watch this space!</div>'; }
+  else { hc.innerHTML = allHistDates.map(dk=>{
+    const ex = exByDate[dk]||0;
+    const ml = mealsByDate[dk]||0;
+    return `<div class="history-row"><span class="hr-date">${formatDate(dk)}${dk===today?' (today)':''}</span><div class="hr-badges"><span class="hr-badge ${ex>0?'done':''}">🏋️ ${ex} ex</span><span class="hr-badge ${ml>0?'done':''}">🥗 ${ml} meals</span></div></div>`;
+  }).join(''); }
+}
+
+loadAll();
+</script>
+</body>
+</html>
